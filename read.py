@@ -1,13 +1,20 @@
 import cv2
 import time
 import numpy as np
+import pickle
 
-NAME_VIDEO = 'ShowWrite.mp4'
+NAME_VIDEO = 'LaTex.mp4'
 
 WAITING_KEY = 10 # Time in milliseconds to wait for a key press
 NAME_WINDOW = 'Manim player'
 TARGET_WIDTH, TARGET_HEIGHT = 800, 600
-PAUSE_TIMES = [0, 1.5, 3, 4.5, 6] 
+
+with open('times.pkl','rb') as file:
+    PAUSE_TIMES = pickle.load(file)
+
+PAUSE_TIMES = [1, 2, 3, 4, 5, 6,7,8,9,10,11,12,13,14] 
+
+print(PAUSE_TIMES)
 
 # Codes for arrows. WARNING: Codes for arrows can change for different OS
 ARROW_LEFT = 37
