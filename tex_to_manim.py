@@ -20,6 +20,19 @@ TEX = open(FILE_NAME, "r")
 
 PAUSE_TIMES = [0]
 
+#--------------- Config ----------------------
+# See all attributes at "\manim\_config\default.cfg"
+
+config["background_color"] = ManimColor('#150C16')
+
+TEXT_COLOR = ManimColor('#ecfee8')
+
+FRAME_WIDTH = config["frame_width"]
+FRAME_HEIGHT = config["frame_height"]
+
+FRAME_TEXT_WIDTH = 10 #FRAME_WIDTH 
+FRAME_TEXT_HEIGHT = FRAME_HEIGHT
+FRAME_TEXT_ORIGIN = [-5,4.5,0] # point of the frame up left
 
 def update_time(t, increment):
     PAUSE_TIMES.append(t+increment)
@@ -173,8 +186,7 @@ class LaTex(Scene):
                     ENV = ""
                     continue
                 if ENV == "equation":
-                    # Write what to do with other lines
-                    eq = MathTex(r"{" + line + r" }" , font_size = 30)
+                    eq = MathTex(r"{" + line + r" }" ,tex_environment = "equation*", font_size = 30, color = TEXT_COLOR)
                 
                     # If THM on add to a group the equation
                     if THM == "theorem" or THM == "lemma" or THM == "proposition":
@@ -182,15 +194,22 @@ class LaTex(Scene):
                         THM_group.add(eq)
                         THM_animations.extend([Write(eq)])
                     else:
-                        eq.next_to(self.mobjects[-1], DOWN).align_on_border([-1.5,0,0], buff=1)
+                        eq.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
+                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /2)
                         self.play(Write(eq))
+                    
                         current_time = update_time(current_time, 1)
-
                         print(PAUSE_TIMES)
                     
 
             #   ALIGN
             #---------------------------------------------------------------
+            # Split the line as latex: create columns of equations according to &
+            # - Set a default animation for each entry
+            # - define \newcommand{\FadeIn}{} in the .tex file, but without effect
+            #   so the pdf will not be modified and i have bookmarks for animations
+            # - If i see \FadeIn in formula, do a FadeIn animation for that formula
+
             elif line.startswith(r"\begin{align") or ENV =="align":
                 if ENV == "":
                     ENV = "align"
@@ -208,7 +227,7 @@ class LaTex(Scene):
                 group = VGroup()
                 N=0
                 for formula in list_of_tex:
-                    eq = MathTex(formula, font_size = 30)
+                    eq = MathTex(formula, font_size = 30, color = TEXT_COLOR)
 
                     if N==0:
                         eq.next_to(self.mobjects[-1], DOWN).align_on_border([-1.5,0,0], buff=1)
@@ -271,8 +290,10 @@ class LaTex(Scene):
                     THM_group.add(text)
                     THM_animations.extend([Write(text)])
                 else:
-                    text = Tex(r"\parbox{9cm}{ \begin{flushleft} " + line + r"\end{flushleft} }", font_size = 30)
-                    text.next_to(self.mobjects[-1], DOWN).align_on_border([-1,0,0], buff=1)
+                    # tex_environment = None        to have not centered text (default was 'centered')
+                    # use \parbox to control the width of text.
+                    text = Tex("\\parbox{" + str(FRAME_TEXT_WIDTH)+ "cm}{" + line + "}", tex_environment = None, font_size = 30, color = TEXT_COLOR)
+                    text.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
                     self.play(Write(text))
                     current_time = update_time(current_time, 1)
 
@@ -291,3 +312,4 @@ class LaTex(Scene):
 
 # Definitions in the preable
 
+# Add a function to Scroll
