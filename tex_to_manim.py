@@ -23,16 +23,19 @@ PAUSE_TIMES = [0]
 #--------------- Config ----------------------
 # See all attributes at "\manim\_config\default.cfg"
 
-config["background_color"] = ManimColor('#150C16')
+#config["background_color"] = ManimColor('#150C16')
+config["background_color"] = WHITE
 
-TEXT_COLOR = ManimColor('#ecfee8')
+#TEXT_COLOR = ManimColor('#ecfee8')
+TEXT_COLOR = BLACK
 
 FRAME_WIDTH = config["frame_width"]
 FRAME_HEIGHT = config["frame_height"]
 
-FRAME_TEXT_WIDTH = 10 #FRAME_WIDTH 
+#FRAME_TEXT_WIDTH = FRAME_WIDTH 
+#print(FRAME_TEXT_WIDTH)
 FRAME_TEXT_HEIGHT = FRAME_HEIGHT
-FRAME_TEXT_ORIGIN = [-5,4.5,0] # point of the frame up left
+FRAME_TEXT_ORIGIN = [-7.5,4.5,0] # point of the frame up left
 
 def update_time(t, increment):
     PAUSE_TIMES.append(t+increment)
@@ -46,7 +49,17 @@ class LaTex(Scene):
         THM = "" # Can be "theorem", "lemma", "proposition", "proof"
         current_time = 0
 
-        start = Dot(color = BLACK).align_on_border([-1,0,0], buff=1).align_on_border([0,1,0], buff=0.8).shift(UP * 0.5)
+        # Compute the width of \textwidth in ManimUnits:
+        my_template = get_preamble(FILE_NAME)
+        print("--------------BEGIN placeholder_text---------------")
+        print(my_template.tex_compiler)
+        print("--------------END placeholder_text---------------")
+
+
+        FRAME_TEXT_WIDTH = Tex(r"\rule{\textwidth}{0.1pt}").width
+        print(FRAME_TEXT_WIDTH )
+
+        start = Dot(color = WHITE).align_on_border([-1,0,0], buff=1).align_on_border([0,1,0], buff=0.8).shift(UP * 0.5)
         self.add(start)
         
         for line in TEX:
@@ -62,7 +75,8 @@ class LaTex(Scene):
             #---------------------------------------------------------------
             if line.startswith(r"\end{document}"):
                 self.play(FadeOut(*self.mobjects))
-                thanks = Tex(r"Thanks for watching!", font_size = 100)
+                thanks = Tex(r"Thanks for watching!", font_size = 100, color = TEXT_COLOR)
+                thanks.set_stroke( color=TEXT_COLOR, width=0.1 )
                 self.play(Write(thanks))
                 break
             
@@ -186,8 +200,9 @@ class LaTex(Scene):
                     ENV = ""
                     continue
                 if ENV == "equation":
-                    eq = MathTex(r"{" + line + r" }" ,tex_environment = "equation*", font_size = 30, color = TEXT_COLOR)
-                
+                    eq = MathTex(r"{" + line + r" }" ,tex_environment = "equation*", tex_template=my_template, font_size = 30, color = TEXT_COLOR)
+                    eq.set_stroke( color=TEXT_COLOR, width=0.05 )
+
                     # If THM on add to a group the equation
                     if THM == "theorem" or THM == "lemma" or THM == "proposition":
                         eq.next_to(THM_group[-1], DOWN)# , aligned_edge = UP)
@@ -195,7 +210,7 @@ class LaTex(Scene):
                         THM_animations.extend([Write(eq)])
                     else:
                         eq.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
-                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /2)
+                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
                         self.play(Write(eq))
                     
                         current_time = update_time(current_time, 1)
@@ -209,74 +224,54 @@ class LaTex(Scene):
             # - define \newcommand{\FadeIn}{} in the .tex file, but without effect
             #   so the pdf will not be modified and i have bookmarks for animations
             # - If i see \FadeIn in formula, do a FadeIn animation for that formula
+            # [[[row[i], row[i+1]] for i in range(0,len(row),2) ] for row in lista]
+            #
+            # 1) create  [ [[f1, f2], [f3, f4]],
+            #              [[f5, f6], [f7, f8]] ]
+            #              
+            # 2) align vertically f2, f6 and f4, f8
+            #
+            # 3) compute len of f1 as MathTex object, the next index in f1.join(f2) will be '&'
+            #
+            # 4) use get_part_by_tex() to obtain a subformula of the whole align.
 
-            elif line.startswith(r"\begin{align") or ENV =="align":
+            elif line.startswith(r"\begin{align") or ENV == "align":
                 if ENV == "":
                     ENV = "align"
-                    animations = []
-                    list_of_tex = []
+                    len_sub_formulas = []
                     continue
-
-                if not line.startswith(r"\end{align"):
-                    line=line.replace("\\\\", "")
-                    line=line.replace("\t&", "")
-                    list_of_tex.extend(line.split(r"&"))              
+                if line.startswith(r"\end{align"):
+                    ENV = ""
                     continue
-
-                ENV = ""
-                group = VGroup()
-                N=0
-                for formula in list_of_tex:
-                    eq = MathTex(formula, font_size = 30, color = TEXT_COLOR)
-
-                    if N==0:
-                        eq.next_to(self.mobjects[-1], DOWN).align_on_border([-1.5,0,0], buff=1)
-                        animations.extend([FadeIn(eq)])
-                        current_time = update_time(current_time, 1)
-
-                        print(PAUSE_TIMES)
+                if ENV == "align":
+                    eq = MathTex(line ,tex_environment = "align*", tex_template=my_template, font_size = 30, color = TEXT_COLOR)
+                    eq.set_stroke( color=TEXT_COLOR, width=0.05 )
                     
-                    if N==1:
-                            eq.next_to(group[0], RIGHT)
-                    
-                    if N>1:
-                        eq.next_to(group[-1], DOWN, aligned_edge = LEFT)
-                    
-                    if "%TransformMatchingTex1" in formula: # Transform into the next line
-                        previous = group[-1].copy()
-                        animations.extend([TransformMatchingTex(previous, eq)])
+                    tex_list = line.split('&')  # this is when stop the animation, maybe change '&' to another comand
+                                                # However, it has to be an invisible character!
 
-                    if "%TransformMatchingTex2" in formula: # Transform in the current line
-                        eq.next_to(group[-1], RIGHT).align_to(group[-1], LEFT)
-                        animations.extend([TransformMatchingTex(group[-1], eq)])
-                        group[-1] = eq
-                    
-                    if "%Add" in formula: 
-                        animations.extend([Succession(Wait(0.5),Add(eq),Wait(0.5))])
+                    for tex in tex_list:
+                        # Compute the lenght of each subformula
+                        len_sub_formulas.append(len(MathTex(tex, tex_template=my_template)[0]))
                         
-                    if "%FadeIn" in formula:
-                        animations.append(FadeIn(eq))              
-                        
-                    if "%Write" in formula:
-                        animations.extend([Write(eq)])
-                    
-                    if "%Create" in formula:
-                        animations.extend([Create(eq)])
-                        
-                    if "%DrawBorderThenFill" in formula:
-                        animations.extend([DrawBorderThenFill(eq)])
-                        
-                    if "%GrowFromPoint" in formula:
-                        animations.extend([GrowFromPoint(eq, ORIGIN) ])
-                        
-                    group.add(eq)
-                    N+=1
-                    
-                for a in animations:
-                    self.play(a)
 
-                continue
+                    if THM == "theorem" or THM == "lemma" or THM == "proposition":
+                        eq.next_to(THM_group[-1], DOWN)# , aligned_edge = UP)
+                        THM_group.add(eq)
+                        THM_animations.extend([Write(eq)])
+                    else:
+                        eq.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
+                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
 
+                        i=0
+                        for len_sub_formula in len_sub_formulas:
+                            self.play(Write(eq[0][i:i+len_sub_formula]))
+                            self.wait(1)
+                            i+=len_sub_formula
+
+                    
+                        
+            
             #   DETECTION TEXT
             #---------------------------------------------------------------
             elif not line.startswith("\\") and not line.startswith("%") and not line.startswith("\t"):                 
@@ -291,8 +286,10 @@ class LaTex(Scene):
                     THM_animations.extend([Write(text)])
                 else:
                     # tex_environment = None        to have not centered text (default was 'centered')
-                    # use \parbox to control the width of text.
-                    text = Tex("\\parbox{" + str(FRAME_TEXT_WIDTH)+ "cm}{" + line + "}", tex_environment = None, font_size = 30, color = TEXT_COLOR)
+                    # use \parbox to control the width of text. 
+                    # WARNING: here FRAME_TEXT_WIDTH is used in cm, not with units of the manim frame
+                    text = Tex(line,tex_environment = "flushleft", tex_template=my_template,  font_size = 30, color = TEXT_COLOR)
+                    text.set_stroke( color=TEXT_COLOR, width=0.05 )
                     text.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
                     self.play(Write(text))
                     current_time = update_time(current_time, 1)
@@ -310,6 +307,20 @@ class LaTex(Scene):
             pickle.dump(PAUSE_TIMES, file)
             
 
+    
 # Definitions in the preable
 
 # Add a function to Scroll
+def get_preamble(name_file):
+    # TODO: Security check: avoid {{ }} in the preamble
+    my_template = TexTemplate()
+    with open(name_file, "r") as file_tex:
+        for line in file_tex:
+            if line.startswith('\\documentclass'):
+                continue
+            if line.startswith('\\begin{document}'):
+                break
+            my_template.add_to_preamble(line)
+    return my_template
+
+
