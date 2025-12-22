@@ -59,41 +59,29 @@ class LaTex(Scene):
         FRAME_TEXT_WIDTH = Tex(r"\rule{\textwidth}{0.1pt}").width
         print(FRAME_TEXT_WIDTH )
 
-        start = Dot(color = WHITE).align_on_border([-1,0,0], buff=1).align_on_border([0,1,0], buff=0.8).shift(UP * 0.5)
-        self.add(start)
+        self.start = Dot(color = WHITE).align_on_border([-1,0,0], buff=1).align_on_border([0,1,0], buff=0.8).shift(UP * 0.5)
+        self.add(self.start)
         
         for line in TEX:
             # Reached bottom of the screen
             if self.mobjects[-1].get_center()[1] < -3.:
                 # Cancel and restart from above
                 self.play(FadeOut(*self.mobjects))
-                self.add(start)
+                self.add(self.start)
             # Empty tex lines
             if line.startswith("\n"): continue
             
             #   END DOCUMENT
             #---------------------------------------------------------------
             if line.startswith(r"\end{document}"):
-                self.play(FadeOut(*self.mobjects))
-                thanks = Tex(r"Thanks for watching!", font_size = 100, color = TEXT_COLOR)
-                thanks.set_stroke( color=TEXT_COLOR, width=0.1 )
-                self.play(Write(thanks))
+                self.EndDocument()
                 break
             
             #   SECTION
             #---------------------------------------------------------------
             if line.startswith(r"\section"):
-                self.play(FadeOut(*self.mobjects))
-                section_title = line.replace(r'\section{', '')
-                section_title_tex = Tex( r"{" + section_title, color = RED , font_size = 50)
-                self.play(FadeIn(section_title_tex))
-                current_time = update_time(current_time, 1)
-                self.play(FadeOut(section_title_tex))
-                current_time = update_time(current_time, 1)
-
-                print(PAUSE_TIMES)
-
-                self.add(start)
+                self.StartSection()
+                
             
             #   BEGIN PROOF
             #---------------------------------------------------------------
@@ -109,28 +97,12 @@ class LaTex(Scene):
                 THM = "theorem"
                 THM_animations = []
                 THM_group = VGroup()                
-                spec = line.replace(r"\begin{thm}","")
-                if len(spec)>3:
-                    thm = Tex(r"\textbf{Theorem} (" + spec[1:-2] + r")", font_size = 40, color = ORANGE)
-                    thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1.,0,0], buff=1)
-                else:
-                    thm = Tex(r"\textbf{Theorem}", font_size = 40, color = ORANGE)
-                    thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1,0,0], buff=1)
-                THM_group.add(thm)
-                THM_animations.extend([Write(thm)])
+                self.StartTheorem(line)
 
             if line.startswith(r"\end{thm}"):
                 THM = ""
-                THM_group.move_to(ORIGIN)
-                THM_box = SurroundingRectangle(THM_group , color = ORANGE, buff=0.3 , corner_radius=0.2)
-                THM_animations.extend([Create(THM_box)])
-
-                self.play(FadeOut(*self.mobjects))
-                for a in THM_animations:
-                    self.play(a)
-                self.wait(1)
-                self.play(FadeOut(*self.mobjects))
-                self.add(start)
+                self.PlayTheorem()
+                
                 
             #   LEMMA green
             #---------------------------------------------------------------
@@ -138,28 +110,12 @@ class LaTex(Scene):
                 THM = "lemma"
                 THM_animations = []
                 THM_group = VGroup()                
-                spec = line.replace(r"\begin{lem}","")
-                if len(spec)>3:
-                    thm = Tex(r"\textbf{Lemma} (" + spec[1:-2] + r")", font_size = 40, color = GREEN)
-                    thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1.,0,0], buff=1)
-                else:
-                    thm = Tex(r"\textbf{Lemma}", font_size = 40, color = GREEN)
-                    thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1,0,0], buff=1)
-                THM_group.add(thm)
-                THM_animations.extend([Write(thm)])
+                self.StartLemma(line)
 
             if line.startswith(r"\end{lem}"):
                 THM = ""
-                THM_group.move_to(ORIGIN)
-                THM_box = SurroundingRectangle(THM_group , color = GREEN, buff=0.3 , corner_radius=0.2)
-                THM_animations.extend([Create(THM_box)])
+                self.PlayLemma()
 
-                self.play(FadeOut(*self.mobjects))
-                for a in THM_animations:
-                    self.play(a)
-                self.wait(1)
-                self.play(FadeOut(*self.mobjects))
-                self.add(start)
 
             #   PROPOSITION blue
             #---------------------------------------------------------------
@@ -167,29 +123,13 @@ class LaTex(Scene):
                 THM = "proposition"
                 THM_animations = []
                 THM_group = VGroup()                
-                spec = line.replace(r"\begin{prop}","")
-                if len(spec)>3:
-                    thm = Tex(r"\textbf{Proposition} (" + spec[1:-2] + r")", font_size = 40, color = BLUE)
-                    thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1.,0,0], buff=1)
-                else:
-                    thm = Tex(r"\textbf{Proposition}", font_size = 40, color = BLUE)
-                    thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1,0,0], buff=1)
-                THM_group.add(thm)
-                THM_animations.extend([Write(thm)])
+                self.StartProposition(line)
 
             if line.startswith(r"\end{prop}"):
                 THM = ""
-                THM_group.move_to(ORIGIN)
-                THM_box = SurroundingRectangle(THM_group , color = BLUE, buff=0.3 , corner_radius=0.2)
-                THM_animations.extend([Create(THM_box)])
+                self.PlayProposition()
 
-                self.play(FadeOut(*self.mobjects))
-                for a in THM_animations:
-                    self.play(a)
-                self.wait(1)
-                self.play(FadeOut(*self.mobjects))
-                self.add(start)
-            
+
             #   EQUATION
             #---------------------------------------------------------------
             if line.startswith(r"\begin{equation") or ENV == "equation":
@@ -303,12 +243,117 @@ class LaTex(Scene):
             #self.play(FadeOut(*self.mobjects)) # Remove all object with FadeOut
 
             # Out of the screen:
+        self.SaveTimes()
+
+    def EndDocument(self):
+        self.play(FadeOut(*self.mobjects))
+        thanks = Tex(r"Thanks for watching!", font_size = 100, color = TEXT_COLOR)
+        thanks.set_stroke( color=TEXT_COLOR, width=0.1 )
+        self.play(Write(thanks))
+        return
+
+    def StartSection():
+        self.play(FadeOut(*self.mobjects))
+        section_title = line.replace(r'\section{', '')
+        section_title_tex = Tex( r"{" + section_title, color = RED , font_size = 50)
+        self.play(FadeIn(section_title_tex))
+        self.play(FadeOut(section_title_tex))
+        self.add(self.start)
+        return
+
+    def StartTheorem(line):
+        specification = line.replace(r"\begin{thm}","")
+        if len(specification)>3:
+            thm = Tex(r"\textbf{Theorem} (" + specification[1:-2] + r")", font_size = 40, color = ORANGE)
+            thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1.,0,0], buff=1)
+        else:
+            thm = Tex(r"\textbf{Theorem}", font_size = 40, color = ORANGE)
+            thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1,0,0], buff=1)
+        THM_group.add(thm)
+        THM_animations.extend([Write(thm)])
+        return
+
+    def StartLemma(lemma):
+        spec = line.replace(r"\begin{lem}","")
+        if len(spec)>3:
+            thm = Tex(r"\textbf{Lemma} (" + spec[1:-2] + r")", font_size = 40, color = GREEN)
+            thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1.,0,0], buff=1)
+        else:
+            thm = Tex(r"\textbf{Lemma}", font_size = 40, color = GREEN)
+            thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1,0,0], buff=1)
+        THM_group.add(thm)
+        THM_animations.extend([Write(thm)])
+        return
+
+    def StartProposition(line):
+        spec = line.replace(r"\begin{prop}","")
+        if len(spec)>3:
+            thm = Tex(r"\textbf{Proposition} (" + spec[1:-2] + r")", font_size = 40, color = BLUE)
+            thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1.,0,0], buff=1)
+        else:
+            thm = Tex(r"\textbf{Proposition}", font_size = 40, color = BLUE)
+            thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1,0,0], buff=1)
+        THM_group.add(thm)
+        THM_animations.extend([Write(thm)])
+        return
+
+
+    def PlayTheorem(self):
+        THM_group.move_to(ORIGIN)
+        THM_box = SurroundingRectangle(THM_group , color = ORANGE, buff=0.3 , corner_radius=0.2)
+        THM_animations.extend([Create(THM_box)])
+        self.play(FadeOut(*self.mobjects))
+        for anim in THM_animations:
+            self.play(anim)
+        self.wait(1)
+        self.play(FadeOut(*self.mobjects))
+        self.add(self.start)
+        return
+
+    def PlayLemma(self):
+        THM_group.move_to(ORIGIN)
+        THM_box = SurroundingRectangle(THM_group , color = GREEN, buff=0.3 , corner_radius=0.2)
+        THM_animations.extend([Create(THM_box)])
+        self.play(FadeOut(*self.mobjects))
+        for anim in THM_animations:
+            self.play(anim)
+        self.wait(1)
+        self.play(FadeOut(*self.mobjects))
+        self.add(self.start)
+        return
+
+    def PlayProposition(self):
+        THM_group.move_to(ORIGIN)
+        THM_box = SurroundingRectangle(THM_group , color = BLUE, buff=0.3 , corner_radius=0.2)
+        THM_animations.extend([Create(THM_box)])
+        self.play(FadeOut(*self.mobjects))
+        for a in THM_animations:
+            self.play(a)
+        self.wait(1)
+        self.play(FadeOut(*self.mobjects))
+        self.add(self.start)
+        return    
+
+    def SaveTimes(self):
+        """
+        Save times in a .pkl file
+        """
         with open("times.pkl", 'wb') as file:
             pickle.dump(PAUSE_TIMES, file)
-            
+        return
 
-    
-# Definitions in the preable
+    def Scroll(self):
+        """
+        Scroll all self.mobjects upward if the end of the screen is reached 
+        """
+        pass
+
+    def ResizeText(self):
+        """
+        Resize and move the text to somewhere else. Maybe to give space to show a figure
+        """
+        pass
+
 
 # Add a function to Scroll
 def get_preamble(name_file):
