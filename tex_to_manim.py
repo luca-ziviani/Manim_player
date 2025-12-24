@@ -24,10 +24,10 @@ PAUSE_TIMES = [0]
 # See all attributes at "\manim\_config\default.cfg"
 
 #config["background_color"] = ManimColor('#150C16')
-config["background_color"] = WHITE
+config["background_color"] = BLACK
 
 #TEXT_COLOR = ManimColor('#ecfee8')
-TEXT_COLOR = BLACK
+TEXT_COLOR = WHITE
 
 FRAME_WIDTH = config["frame_width"]
 FRAME_HEIGHT = config["frame_height"]
@@ -80,7 +80,7 @@ class LaTex(Scene):
             #   SECTION
             #---------------------------------------------------------------
             if line.startswith(r"\section"):
-                self.StartSection()
+                self.StartSection(line)
                 
             
             #   BEGIN PROOF
@@ -95,8 +95,8 @@ class LaTex(Scene):
             #---------------------------------------------------------------
             if line.startswith(r"\begin{thm}"):
                 THM = "theorem"
-                THM_animations = []
-                THM_group = VGroup()                
+                self.THM_animations = []
+                self.THM_group = VGroup()                
                 self.StartTheorem(line)
 
             if line.startswith(r"\end{thm}"):
@@ -108,8 +108,8 @@ class LaTex(Scene):
             #---------------------------------------------------------------
             if line.startswith(r"\begin{lem}"):
                 THM = "lemma"
-                THM_animations = []
-                THM_group = VGroup()                
+                self.THM_animations = []
+                self.THM_group = VGroup()                
                 self.StartLemma(line)
 
             if line.startswith(r"\end{lem}"):
@@ -121,8 +121,8 @@ class LaTex(Scene):
             #---------------------------------------------------------------
             if line.startswith(r"\begin{prop}"):
                 THM = "proposition"
-                THM_animations = []
-                THM_group = VGroup()                
+                self.THM_animations = []
+                self.THM_group = VGroup()                
                 self.StartProposition(line)
 
             if line.startswith(r"\end{prop}"):
@@ -145,9 +145,9 @@ class LaTex(Scene):
 
                     # If THM on add to a group the equation
                     if THM == "theorem" or THM == "lemma" or THM == "proposition":
-                        eq.next_to(THM_group[-1], DOWN)# , aligned_edge = UP)
-                        THM_group.add(eq)
-                        THM_animations.extend([Write(eq)])
+                        eq.next_to(self.THM_group[-1], DOWN)# , aligned_edge = UP)
+                        self.THM_group.add(eq)
+                        self.THM_animations.extend([Write(eq)])
                     else:
                         eq.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
                         eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
@@ -196,9 +196,10 @@ class LaTex(Scene):
                         
 
                     if THM == "theorem" or THM == "lemma" or THM == "proposition":
-                        eq.next_to(THM_group[-1], DOWN)# , aligned_edge = UP)
-                        THM_group.add(eq)
-                        THM_animations.extend([Write(eq)])
+                        eq.next_to(self.THM_group[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
+                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
+                        self.THM_group.add(eq)
+                        self.THM_animations.extend([Write(eq)])
                     else:
                         eq.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
                         eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
@@ -220,10 +221,10 @@ class LaTex(Scene):
                 
                 if THM == "theorem" or THM == "lemma" or THM == "proposition":
                     text = Tex(r"{ \begin{flushleft} " + line + r"\end{flushleft} }", font_size = 30)
-                    text.next_to(THM_group[-1], DOWN)
-                    text.align_to(THM_group[0], LEFT)
-                    THM_group.add(text)
-                    THM_animations.extend([Write(text)])
+                    text.next_to(self.THM_group[-1], DOWN)
+                    text.align_to(self.THM_group[0], LEFT)
+                    self.THM_group.add(text)
+                    self.THM_animations.extend([Write(text)])
                 else:
                     # tex_environment = None        to have not centered text (default was 'centered')
                     # use \parbox to control the width of text. 
@@ -252,7 +253,7 @@ class LaTex(Scene):
         self.play(Write(thanks))
         return
 
-    def StartSection():
+    def StartSection(self,line):
         self.play(FadeOut(*self.mobjects))
         section_title = line.replace(r'\section{', '')
         section_title_tex = Tex( r"{" + section_title, color = RED , font_size = 50)
@@ -261,7 +262,7 @@ class LaTex(Scene):
         self.add(self.start)
         return
 
-    def StartTheorem(line):
+    def StartTheorem(self,line):
         specification = line.replace(r"\begin{thm}","")
         if len(specification)>3:
             thm = Tex(r"\textbf{Theorem} (" + specification[1:-2] + r")", font_size = 40, color = ORANGE)
@@ -269,11 +270,11 @@ class LaTex(Scene):
         else:
             thm = Tex(r"\textbf{Theorem}", font_size = 40, color = ORANGE)
             thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1,0,0], buff=1)
-        THM_group.add(thm)
-        THM_animations.extend([Write(thm)])
+        self.THM_group.add(thm)
+        self.THM_animations.extend([Write(thm)])
         return
 
-    def StartLemma(lemma):
+    def StartLemma(self,lemma):
         spec = line.replace(r"\begin{lem}","")
         if len(spec)>3:
             thm = Tex(r"\textbf{Lemma} (" + spec[1:-2] + r")", font_size = 40, color = GREEN)
@@ -281,11 +282,11 @@ class LaTex(Scene):
         else:
             thm = Tex(r"\textbf{Lemma}", font_size = 40, color = GREEN)
             thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1,0,0], buff=1)
-        THM_group.add(thm)
-        THM_animations.extend([Write(thm)])
+        self.THM_group.add(thm)
+        self.THM_animations.extend([Write(thm)])
         return
 
-    def StartProposition(line):
+    def StartProposition(self,line):
         spec = line.replace(r"\begin{prop}","")
         if len(spec)>3:
             thm = Tex(r"\textbf{Proposition} (" + spec[1:-2] + r")", font_size = 40, color = BLUE)
@@ -293,17 +294,17 @@ class LaTex(Scene):
         else:
             thm = Tex(r"\textbf{Proposition}", font_size = 40, color = BLUE)
             thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1,0,0], buff=1)
-        THM_group.add(thm)
-        THM_animations.extend([Write(thm)])
+        self.THM_group.add(thm)
+        self.THM_animations.extend([Write(thm)])
         return
 
 
     def PlayTheorem(self):
-        THM_group.move_to(ORIGIN)
-        THM_box = SurroundingRectangle(THM_group , color = ORANGE, buff=0.3 , corner_radius=0.2)
-        THM_animations.extend([Create(THM_box)])
+        self.THM_group.move_to(ORIGIN)
+        THM_box = SurroundingRectangle(self.THM_group , color = ORANGE, buff=0.3 , corner_radius=0.2)
+        self.THM_animations.extend([Create(THM_box)])
         self.play(FadeOut(*self.mobjects))
-        for anim in THM_animations:
+        for anim in self.THM_animations:
             self.play(anim)
         self.wait(1)
         self.play(FadeOut(*self.mobjects))
@@ -311,11 +312,11 @@ class LaTex(Scene):
         return
 
     def PlayLemma(self):
-        THM_group.move_to(ORIGIN)
-        THM_box = SurroundingRectangle(THM_group , color = GREEN, buff=0.3 , corner_radius=0.2)
-        THM_animations.extend([Create(THM_box)])
+        self.THM_group.move_to(ORIGIN)
+        THM_box = SurroundingRectangle(self.THM_group , color = GREEN, buff=0.3 , corner_radius=0.2)
+        self.THM_animations.extend([Create(THM_box)])
         self.play(FadeOut(*self.mobjects))
-        for anim in THM_animations:
+        for anim in self.THM_animations:
             self.play(anim)
         self.wait(1)
         self.play(FadeOut(*self.mobjects))
@@ -323,11 +324,11 @@ class LaTex(Scene):
         return
 
     def PlayProposition(self):
-        THM_group.move_to(ORIGIN)
-        THM_box = SurroundingRectangle(THM_group , color = BLUE, buff=0.3 , corner_radius=0.2)
-        THM_animations.extend([Create(THM_box)])
+        self.THM_group.move_to(ORIGIN)
+        THM_box = SurroundingRectangle(self.THM_group , color = BLUE, buff=0.3 , corner_radius=0.2)
+        self.THM_animations.extend([Create(THM_box)])
         self.play(FadeOut(*self.mobjects))
-        for a in THM_animations:
+        for a in self.THM_animations:
             self.play(a)
         self.wait(1)
         self.play(FadeOut(*self.mobjects))
