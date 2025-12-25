@@ -132,11 +132,11 @@ class LaTex(Scene):
 
             #   EQUATION
             #---------------------------------------------------------------
-            if line.startswith(r"\begin{equation") or ENV == "equation":
+            if line.startswith(r"\begin{equation") or line.startswith(r"\[") or ENV == "equation":
                 if ENV == "":
                     ENV = "equation"
                     continue
-                if line.startswith(r"\end{equation"):
+                if line.startswith(r"\end{equation") or line.startswith(r"\]"):
                     ENV = ""
                     continue
                 if ENV == "equation":
@@ -191,8 +191,15 @@ class LaTex(Scene):
                                                 # However, it has to be an invisible character!
 
                     for tex in tex_list:
+                        print(tex)
+                        if "\\\\" in tex:
+                            tex = tex.replace("\\\\", "")
+                        if tex.startswith("\t"):
+                            tex = tex.replace("\t", "")
                         # Compute the lenght of each subformula
-                        len_sub_formulas.append(len(MathTex(tex, tex_template=my_template)[0]))
+                        formula = MathTex(tex, tex_template=my_template)
+                        if isinstance(formula, list) and len(formula)>0:
+                            len_sub_formulas.append(len(formula[0]))
                         
 
                     if THM == "theorem" or THM == "lemma" or THM == "proposition":
