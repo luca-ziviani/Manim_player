@@ -178,12 +178,61 @@ class LaTex(Scene):
             elif line.startswith(r"\begin{align") or ENV == "align":
                 if ENV == "":
                     ENV = "align"
-                    len_sub_formulas = []
+                    self.len_sub_formulas = []
+                    self.Total_align = ""
+                    self.Align_Matrix = []
+                    self.Align_Group = VGroup()  
+                    self.Align_Animations = []
                     continue
                 if line.startswith(r"\end{align"):
                     ENV = ""
+                    print("FINAL MATRIX:")
+                    print(self.Align_Matrix)
+                    eq = MathTex(self.Total_align, tex_environment = "align*", tex_template=my_template, font_size = 30, color = TEXT_COLOR)
+                    eq.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
+                    self.play(Write(eq))
+
+                    # Untill here I can write the whole align thanks to the string Total_align
+                    # and I kept track of the structure of the align. Now I need to build the 
+                    # sub-Mobjects of the equation and define the transformations. 
+                    # Fill the list Align_Animations
+
+
+                    continue
+                    # Play the animations
+                    if THM == "theorem" or THM == "lemma" or THM == "proposition":
+                        eq.next_to(self.THM_group[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
+                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
+                        self.THM_group.add(*self.Align_Group) 
+                        self.THM_animations.extend(*self.Align_Animations)
+                    else:
+                        eq.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
+                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
+
+                        i=0
+                        for len_sub_formula in self.len_sub_formulas:
+                            self.play(Write(eq[0][i:i+len_sub_formula]))
+                            self.wait(1)
+                            i+=len_sub_formula
                     continue
                 if ENV == "align":
+                    self.Total_align += line
+                    if "\\\\" in line:
+                        line = line.replace("\\\\", "")
+                    if line.startswith("\t"):
+                        line = line.replace("\t", "")
+                    
+                    # ADD HERE GET_INFO ABOUT TRANSFORM, FADE,...
+
+                    row = line.split('&')
+                    print(row)
+
+                    self.Align_Matrix.append( [[row[i], row[i+1]] for i in range(0,len(row),2) ] )
+                    #self.Align_Matrix.append( [ row[i] + row[i+1] for i in range(0,len(row),2) ] )
+                    
+
+                    continue
+
                     eq = MathTex(line ,tex_environment = "align*", tex_template=my_template, font_size = 30, color = TEXT_COLOR)
                     eq.set_stroke( color=TEXT_COLOR, width=0.05 )
                     
@@ -199,23 +248,10 @@ class LaTex(Scene):
                         # Compute the lenght of each subformula
                         formula = MathTex(tex, tex_template=my_template)
                         if isinstance(formula, list) and len(formula)>0:
-                            len_sub_formulas.append(len(formula[0]))
+                            self.len_sub_formulas.append(len(formula[0]))
                         
 
-                    if THM == "theorem" or THM == "lemma" or THM == "proposition":
-                        eq.next_to(self.THM_group[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
-                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
-                        self.THM_group.add(eq)
-                        self.THM_animations.extend([Write(eq)])
-                    else:
-                        eq.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
-                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
-
-                        i=0
-                        for len_sub_formula in len_sub_formulas:
-                            self.play(Write(eq[0][i:i+len_sub_formula]))
-                            self.wait(1)
-                            i+=len_sub_formula
+                    
 
                     
                         
