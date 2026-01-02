@@ -26,19 +26,29 @@ PAUSE_TIMES = [0]
 #--------------- Config ----------------------
 # See all attributes at "\manim\_config\default.cfg"
 
-#config["background_color"] = ManimColor('#150C16')
-config["background_color"] = BLACK
 
-#TEXT_COLOR = ManimColor('#ecfee8')
-TEXT_COLOR = WHITE
+BACKGROUND_COLOR = config["background_color"]
+TEXT_COLOR = WHITE #  ManimColor('#ecfee8')
 
 FRAME_WIDTH = config["frame_width"]
 FRAME_HEIGHT = config["frame_height"]
+FRAME_TEXT_WIDTH = 15
+FRAME_TEXT_HEIGHT = 8
+LATEX_TEXTWIDTH = 12 # To match the lenght in the preamble
 
-#FRAME_TEXT_WIDTH = FRAME_WIDTH 
-#print(FRAME_TEXT_WIDTH)
-FRAME_TEXT_HEIGHT = FRAME_HEIGHT
-FRAME_TEXT_ORIGIN = [-7.5,4.5,0] # point of the frame up left
+print("------------ Config ------------")
+print(f"BACKGROUND_COLOR = {BACKGROUND_COLOR}")
+print(f"TEXT_COLOR = {TEXT_COLOR}\n")
+print(f"FRAME_WIDTH = {FRAME_WIDTH}")
+print(f"FRAME_HEIGHT = {FRAME_HEIGHT}\n")
+print(f"FRAME_TEXT_WIDTH = {FRAME_TEXT_WIDTH}")
+print(f"FRAME_TEXT_HEIGHT = {FRAME_TEXT_HEIGHT}")
+print("--------------------------------")
+
+
+# Multiply by FRAME_TEXT_WIDTH to get the manim measure from the latex measure
+
+
 
 def update_time(t, increment):
     PAUSE_TIMES.append(t+increment)
@@ -58,14 +68,14 @@ class LaTex(Scene):
         # Compute the width of \textwidth in ManimUnits:
         my_template = get_preamble(FILE_NAME)
 
+        FRAME_TEXT_WIDTH = MathTex(r"\rule{\textwidth}{0.1pt}" , tex_template=my_template, font_size = 30).width 
+        print(f"FRAME_TEXT_WIDTH = {FRAME_TEXT_WIDTH}")    
+        self.FRAME_TEXT_ORIGIN = [-FRAME_TEXT_WIDTH/2, FRAME_TEXT_HEIGHT/2, 0] # point of the frame up left
 
-        FRAME_TEXT_WIDTH = Tex(r"\rule{\textwidth}{0.1pt}").width
-        print(f"FRAME_TEXT_WIDTH = {FRAME_TEXT_WIDTH}")
-        
         for line in TEX:
             # Reached bottom of the screen
             if self.text_mobjects and self.text_mobjects[-1].get_center()[1] < -3.:
-                self.Scroll()
+                self.Scroll(0.8*FRAME_HEIGHT)
                 
             # Empty tex lines
             if line.startswith("\n"): continue
@@ -86,8 +96,8 @@ class LaTex(Scene):
             #---------------------------------------------------------------
             if line.startswith(r"\begin{proof}"):
                 #self.play(FadeOut(*self.mobjects))
-                prf = Tex(r"\textit{Proof.}", font_size = 30, color = ORANGE)
-                prf.next_to(self.GetLastPosition(), DOWN).align_on_border([-1,0,0], buff=1)
+                prf = Tex(r"\textit{Proof.}", tex_template=my_template, font_size = 30, color = ORANGE)
+                prf.next_to(self.GetLastPosition(), DOWN)
                 self.play(Write(prf))
                 self.text_mobjects.add(prf)
             
@@ -145,12 +155,13 @@ class LaTex(Scene):
 
                     # If THM on add to a group the equation
                     if THM == "theorem" or THM == "lemma" or THM == "proposition":
-                        eq.next_to(self.THM_group[-1], DOWN)# , aligned_edge = UP)
+                        eq.next_to(self.THM_group[-1], DOWN)
+                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /2)
                         self.THM_group.add(eq)
                         self.THM_animations.extend([Write(eq)])
                     else:
-                        eq.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
-                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
+                        eq.next_to(self.mobjects[-1], DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
+                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /2)
                         self.play(Write(eq))
                     
                         current_time = update_time(current_time, 1)
@@ -187,19 +198,18 @@ class LaTex(Scene):
                 if line.startswith(r"\end{align"):
                     ENV = ""
 
-                    
                     eq = MathTex(self.Total_align, tex_environment = "align*", tex_template=my_template, font_size = 30, color = TEXT_COLOR,
-                                    substrings_to_isolate = self.strings_to_isolate)
-                    
+                                    substrings_to_isolate = self.strings_to_isolate)                    
 
                     if THM == "theorem" or THM == "lemma" or THM == "proposition":
-                        eq.next_to(self.THM_group[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
-                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
+                        eq.next_to(self.THM_group[-1], DOWN).align_to(self.THM_group[-1], LEFT)
+                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /2)
                         self.THM_group.add(eq)
                         for substring in self.strings_to_isolate:
                             self.THM_animations.append( Write(eq.get_part_by_tex(substring)))
                     else:
-                        eq.next_to(self.GetLastPosition(), DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
+                        eq.next_to(self.GetLastPosition(), DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
+                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /2)
                         for substring in self.strings_to_isolate:
                             print(f"RENDERING: {eq.get_part_by_tex(substring)}")
                             self.play(Write(eq.get_part_by_tex(substring)))        
@@ -214,12 +224,12 @@ class LaTex(Scene):
                     continue
                     # Play the animations
                     if THM == "theorem" or THM == "lemma" or THM == "proposition":
-                        eq.next_to(self.THM_group[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
+                        eq.next_to(self.THM_group[-1], DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
                         eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
                         self.THM_group.add(*self.Align_Group) 
                         self.THM_animations.extend(*self.Align_Animations)
                     else:
-                        eq.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
+                        eq.next_to(self.mobjects[-1], DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
                         eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
 
                         i=0
@@ -275,7 +285,7 @@ class LaTex(Scene):
                 #text = Tex(r"{ \begin{flushleft} " + line + r"\end{flushleft} }", font_size = 30)
                 
                 if THM == "theorem" or THM == "lemma" or THM == "proposition":
-                    text = Tex(r"{ \begin{flushleft} " + line + r"\end{flushleft} }", font_size = 30)
+                    text = Tex(line,tex_environment = "flushleft", tex_template=my_template,  font_size = 30, color = TEXT_COLOR)
                     text.next_to(self.THM_group[-1], DOWN)
                     text.align_to(self.THM_group[0], LEFT)
                     self.THM_group.add(text)
@@ -286,7 +296,7 @@ class LaTex(Scene):
                     # WARNING: here FRAME_TEXT_WIDTH is used in cm, not with units of the manim frame
                     text = Tex(line,tex_environment = "flushleft", tex_template=my_template,  font_size = 30, color = TEXT_COLOR)
                     text.set_stroke( color=TEXT_COLOR, width=0.05 )
-                    text.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
+                    text.next_to(self.GetLastPosition(), DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
                     self.play(Write(text))
                     current_time = update_time(current_time, 1)
                     self.text_mobjects.add(text)
@@ -405,13 +415,17 @@ class LaTex(Scene):
         if self.text_mobjects:
             return self.text_mobjects[-1]
         else:
-            return FRAME_TEXT_ORIGIN
+            return self.FRAME_TEXT_ORIGIN
 
-    def Scroll(self):
+    def Scroll(self,length):
         """
         Scroll all self.mobjects upward if the end of the screen is reached 
         """
-        self.play(self.text_mobjects.animate.shift(0.7*FRAME_HEIGHT*UP))
+        self.play(self.text_mobjects.animate.shift(length*UP))
+        for mobj in self.text_mobjects:
+            if mobj.get_bottom()[1] > self.FRAME_TEXT_ORIGIN[1]:
+                self.remove(mobj)
+                self.text_mobjects.remove(mobj)
         return
 
     def ResizeText(self):
