@@ -2,7 +2,9 @@
 """
 Created on Fri Jun 20 19:49:40 2025
 
-@author: lucaz
+@author: Luca Ziviani
+
+conda activate my-manim-environment
 """
 
 from manim import *
@@ -12,7 +14,8 @@ import pickle
 
 
 
-FILE_NAME = "main.tex"
+#FILE_NAME = "main.tex"
+FILE_NAME = "SteinWeiss.tex"
 
 os.chdir(os.getcwd())
 
@@ -47,27 +50,23 @@ class LaTex(Scene):
     def construct(self):
         ENV = "" # Can be "equation", "align"
         THM = "" # Can be "theorem", "lemma", "proposition", "proof"
+
+        self.text_mobjects = VGroup()
+
         current_time = 0
 
         # Compute the width of \textwidth in ManimUnits:
         my_template = get_preamble(FILE_NAME)
-        print("--------------BEGIN placeholder_text---------------")
-        print(my_template.tex_compiler)
-        print("--------------END placeholder_text---------------")
 
 
         FRAME_TEXT_WIDTH = Tex(r"\rule{\textwidth}{0.1pt}").width
-        print(FRAME_TEXT_WIDTH )
-
-        self.start = Dot(color = WHITE).align_on_border([-1,0,0], buff=1).align_on_border([0,1,0], buff=0.8).shift(UP * 0.5)
-        self.add(self.start)
+        print(f"FRAME_TEXT_WIDTH = {FRAME_TEXT_WIDTH}")
         
         for line in TEX:
             # Reached bottom of the screen
-            if self.mobjects[-1].get_center()[1] < -3.:
-                # Cancel and restart from above
-                self.play(FadeOut(*self.mobjects))
-                self.add(self.start)
+            if self.text_mobjects and self.text_mobjects[-1].get_center()[1] < -3.:
+                self.Scroll()
+                
             # Empty tex lines
             if line.startswith("\n"): continue
             
@@ -88,8 +87,9 @@ class LaTex(Scene):
             if line.startswith(r"\begin{proof}"):
                 #self.play(FadeOut(*self.mobjects))
                 prf = Tex(r"\textit{Proof.}", font_size = 30, color = ORANGE)
-                prf.next_to(self.mobjects[-1], DOWN).align_on_border([-1,0,0], buff=1)
+                prf.next_to(self.GetLastPosition(), DOWN).align_on_border([-1,0,0], buff=1)
                 self.play(Write(prf))
+                self.text_mobjects.add(prf)
             
             #   THEOREM (orange)
             #---------------------------------------------------------------
@@ -154,7 +154,7 @@ class LaTex(Scene):
                         self.play(Write(eq))
                     
                         current_time = update_time(current_time, 1)
-                        print(PAUSE_TIMES)
+                        self.text_mobjects.add(eq)
                     
 
             #   ALIGN
@@ -178,7 +178,7 @@ class LaTex(Scene):
             elif line.startswith(r"\begin{align") or ENV == "align":
                 if ENV == "":
                     ENV = "align"
-                    self.len_sub_formulas = []
+                    self.strings_to_isolate = []
                     self.Total_align = ""
                     self.Align_Matrix = []
                     self.Align_Group = VGroup()  
@@ -186,11 +186,24 @@ class LaTex(Scene):
                     continue
                 if line.startswith(r"\end{align"):
                     ENV = ""
-                    print("FINAL MATRIX:")
-                    print(self.Align_Matrix)
-                    eq = MathTex(self.Total_align, tex_environment = "align*", tex_template=my_template, font_size = 30, color = TEXT_COLOR)
-                    eq.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
-                    self.play(Write(eq))
+
+                    
+                    eq = MathTex(self.Total_align, tex_environment = "align*", tex_template=my_template, font_size = 30, color = TEXT_COLOR,
+                                    substrings_to_isolate = self.strings_to_isolate)
+                    
+
+                    if THM == "theorem" or THM == "lemma" or THM == "proposition":
+                        eq.next_to(self.THM_group[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
+                        eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /4)
+                        self.THM_group.add(eq)
+                        for substring in self.strings_to_isolate:
+                            self.THM_animations.append( Write(eq.get_part_by_tex(substring)))
+                    else:
+                        eq.next_to(self.GetLastPosition(), DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
+                        for substring in self.strings_to_isolate:
+                            print(f"RENDERING: {eq.get_part_by_tex(substring)}")
+                            self.play(Write(eq.get_part_by_tex(substring)))        
+                        self.text_mobjects.add(eq)
 
                     # Untill here I can write the whole align thanks to the string Total_align
                     # and I kept track of the structure of the align. Now I need to build the 
@@ -217,18 +230,17 @@ class LaTex(Scene):
                     continue
                 if ENV == "align":
                     self.Total_align += line
-                    if "\\\\" in line:
-                        line = line.replace("\\\\", "")
-                    if line.startswith("\t"):
-                        line = line.replace("\t", "")
+                    #if "\\\\" in line:
+                    #    line = line.replace("\\\\", "")
+                    #if line.startswith("\t"):
+                    #    line = line.replace("\t", "")
                     
                     # ADD HERE GET_INFO ABOUT TRANSFORM, FADE,...
 
                     row = line.split('&')
-                    print(row)
-
-                    self.Align_Matrix.append( [[row[i], row[i+1]] for i in range(0,len(row),2) ] )
-                    #self.Align_Matrix.append( [ row[i] + row[i+1] for i in range(0,len(row),2) ] )
+                    self.strings_to_isolate.extend([substring for substring in row if substring])
+                    #self.Align_Matrix.append( [[row[i], row[i+1]] for i in range(0,len(row),2) ] )
+                    self.Align_Matrix.append(row)
                     
 
                     continue
@@ -277,8 +289,8 @@ class LaTex(Scene):
                     text.next_to(self.mobjects[-1], DOWN).align_to(FRAME_TEXT_ORIGIN, LEFT)
                     self.play(Write(text))
                     current_time = update_time(current_time, 1)
+                    self.text_mobjects.add(text)
 
-                    print(PAUSE_TIMES)
                 
             #   MANIM
             #---------------------------------------------------------------
@@ -290,19 +302,21 @@ class LaTex(Scene):
         self.SaveTimes()
 
     def EndDocument(self):
-        self.play(FadeOut(*self.mobjects))
+        if self.text_mobjects:
+            self.play(FadeOut(*self.text_mobjects))
         thanks = Tex(r"Thanks for watching!", font_size = 100, color = TEXT_COLOR)
         thanks.set_stroke( color=TEXT_COLOR, width=0.1 )
         self.play(Write(thanks))
         return
 
     def StartSection(self,line):
-        self.play(FadeOut(*self.mobjects))
+        if self.text_mobjects:
+            self.play(FadeOut(*self.text_mobjects))
         section_title = line.replace(r'\section{', '')
         section_title_tex = Tex( r"{" + section_title, color = RED , font_size = 50)
         self.play(FadeIn(section_title_tex))
         self.play(FadeOut(section_title_tex))
-        self.add(self.start)
+
         return
 
     def StartTheorem(self,line):
@@ -312,7 +326,7 @@ class LaTex(Scene):
             thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1.,0,0], buff=1)
         else:
             thm = Tex(r"\textbf{Theorem}", font_size = 40, color = ORANGE)
-            thm.next_to(self.mobjects[-1], DOWN).align_on_border([-1,0,0], buff=1)
+            thm.next_to(self.GetLastPosition(), DOWN).align_on_border([-1,0,0], buff=1)
         self.THM_group.add(thm)
         self.THM_animations.extend([Write(thm)])
         return
@@ -346,12 +360,13 @@ class LaTex(Scene):
         self.THM_group.move_to(ORIGIN)
         THM_box = SurroundingRectangle(self.THM_group , color = ORANGE, buff=0.3 , corner_radius=0.2)
         self.THM_animations.extend([Create(THM_box)])
-        self.play(FadeOut(*self.mobjects))
+        if self.text_mobjects:
+            self.play(FadeOut(*self.text_mobjects))
         for anim in self.THM_animations:
             self.play(anim)
         self.wait(1)
         self.play(FadeOut(*self.mobjects))
-        self.add(self.start)
+        
         return
 
     def PlayLemma(self):
@@ -363,7 +378,7 @@ class LaTex(Scene):
             self.play(anim)
         self.wait(1)
         self.play(FadeOut(*self.mobjects))
-        self.add(self.start)
+        
         return
 
     def PlayProposition(self):
@@ -375,7 +390,7 @@ class LaTex(Scene):
             self.play(a)
         self.wait(1)
         self.play(FadeOut(*self.mobjects))
-        self.add(self.start)
+        
         return    
 
     def SaveTimes(self):
@@ -386,11 +401,18 @@ class LaTex(Scene):
             pickle.dump(PAUSE_TIMES, file)
         return
 
+    def GetLastPosition(self):
+        if self.text_mobjects:
+            return self.text_mobjects[-1]
+        else:
+            return FRAME_TEXT_ORIGIN
+
     def Scroll(self):
         """
         Scroll all self.mobjects upward if the end of the screen is reached 
         """
-        pass
+        self.play(self.text_mobjects.animate.shift(0.7*FRAME_HEIGHT*UP))
+        return
 
     def ResizeText(self):
         """
