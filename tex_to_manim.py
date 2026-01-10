@@ -32,8 +32,8 @@ TEXT_COLOR = WHITE #  ManimColor('#ecfee8')
 
 FRAME_WIDTH = config["frame_width"]
 FRAME_HEIGHT = config["frame_height"]
-FRAME_TEXT_WIDTH = 15
-FRAME_TEXT_HEIGHT = 8
+FRAME_TEXT_WIDTH = 17
+FRAME_TEXT_HEIGHT = 9
 LATEX_TEXTWIDTH = 12 # To match the lenght in the preamble
 
 print("------------ Config ------------")
@@ -68,14 +68,14 @@ class LaTex(Scene):
         # Compute the width of \textwidth in ManimUnits:
         my_template = get_preamble(FILE_NAME)
 
-        FRAME_TEXT_WIDTH = MathTex(r"\rule{\textwidth}{0.1pt}" , tex_template=my_template, font_size = 30).width 
+        FRAME_TEXT_WIDTH = MathTex(r"\rule{\textwidth}{0.1pt}" , tex_template=my_template, font_size = 36).width 
         print(f"FRAME_TEXT_WIDTH = {FRAME_TEXT_WIDTH}")    
         self.FRAME_TEXT_ORIGIN = [-FRAME_TEXT_WIDTH/2, FRAME_TEXT_HEIGHT/2, 0] # point of the frame up left
 
         for line in TEX:
             # Reached bottom of the screen
             if self.text_mobjects and self.text_mobjects[-1].get_center()[1] < -3.:
-                self.Scroll(0.8*FRAME_HEIGHT)
+                self.Scroll(0.5*FRAME_HEIGHT)
                 
             # Empty tex lines
             if line.startswith("\n"): continue
@@ -96,7 +96,7 @@ class LaTex(Scene):
             #---------------------------------------------------------------
             if line.startswith(r"\begin{proof}"):
                 #self.play(FadeOut(*self.mobjects))
-                prf = Tex(r"\textit{Proof.}", tex_template=my_template, font_size = 30, color = ORANGE)
+                prf = Tex(r"\textit{Proof.}", tex_template=my_template, font_size = 36, color = ORANGE)
                 prf.next_to(self.GetLastPosition(), DOWN)
                 self.play(Write(prf))
                 self.text_mobjects.add(prf)
@@ -150,7 +150,7 @@ class LaTex(Scene):
                     ENV = ""
                     continue
                 if ENV == "equation":
-                    eq = MathTex(r"{" + line + r" }" ,tex_environment = "equation*", tex_template=my_template, font_size = 30, color = TEXT_COLOR)
+                    eq = MathTex(r"{" + line + r" }" ,tex_environment = "equation*", tex_template=my_template, font_size = 36, color = TEXT_COLOR)
                     eq.set_stroke( color=TEXT_COLOR, width=0.05 )
 
                     # If THM on add to a group the equation
@@ -198,8 +198,10 @@ class LaTex(Scene):
                 if line.startswith(r"\end{align"):
                     ENV = ""
 
-                    eq = MathTex(self.Total_align, tex_environment = "align*", tex_template=my_template, font_size = 30, color = TEXT_COLOR,
-                                    substrings_to_isolate = self.strings_to_isolate)                    
+                    eq = MathTex(self.Total_align, tex_environment = "align*", tex_template=my_template, font_size = 36, color = TEXT_COLOR,
+                                    substrings_to_isolate = self.strings_to_isolate)
+                    
+                    
 
                     if THM == "theorem" or THM == "lemma" or THM == "proposition":
                         eq.next_to(self.THM_group[-1], DOWN).align_to(self.THM_group[-1], LEFT)
@@ -210,10 +212,16 @@ class LaTex(Scene):
                     else:
                         eq.next_to(self.GetLastPosition(), DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
                         eq.shift(RIGHT * (FRAME_TEXT_WIDTH - eq.width) /2)
+                        
                         for substring in self.strings_to_isolate:
-                            print(f"RENDERING: {eq.get_part_by_tex(substring)}")
-                            self.play(Write(eq.get_part_by_tex(substring)))        
-                        self.text_mobjects.add(eq)
+                            eq_part = eq.get_part_by_tex(substring)
+                            print(f"RENDERING: {eq_part}")
+                            self.play(Write(eq_part))   
+                            if self.GetLastPosition().get_bottom()[1] - eq_part.height < -FRAME_HEIGHT/2:
+                                self.text_mobjects.add(eq_part)
+                                self.Scroll(0.4*FRAME_HEIGHT)
+                                eq.shift(0.4*FRAME_HEIGHT*UP)
+                        #self.text_mobjects.add(eq)
 
                     # Untill here I can write the whole align thanks to the string Total_align
                     # and I kept track of the structure of the align. Now I need to build the 
@@ -255,7 +263,7 @@ class LaTex(Scene):
 
                     continue
 
-                    eq = MathTex(line ,tex_environment = "align*", tex_template=my_template, font_size = 30, color = TEXT_COLOR)
+                    eq = MathTex(line ,tex_environment = "align*", tex_template=my_template, font_size = 36, color = TEXT_COLOR)
                     eq.set_stroke( color=TEXT_COLOR, width=0.05 )
                     
                     tex_list = line.split('&')  # this is when stop the animation, maybe change '&' to another comand
@@ -272,20 +280,15 @@ class LaTex(Scene):
                         if isinstance(formula, list) and len(formula)>0:
                             self.len_sub_formulas.append(len(formula[0]))
                         
-
-                    
-
-                    
-                        
             
             #   DETECTION TEXT
             #---------------------------------------------------------------
             elif not line.startswith("\\") and not line.startswith("%") and not line.startswith("\t"):                 
                 # WARNING: avoid to write lines " \n" instead of "\n" 
-                #text = Tex(r"{ \begin{flushleft} " + line + r"\end{flushleft} }", font_size = 30)
+                #text = Tex(r"{ \begin{flushleft} " + line + r"\end{flushleft} }", font_size = 36)
                 
                 if THM == "theorem" or THM == "lemma" or THM == "proposition":
-                    text = Tex(line,tex_environment = "flushleft", tex_template=my_template,  font_size = 30, color = TEXT_COLOR)
+                    text = Tex(line,tex_environment = "flushleft", tex_template=my_template,  font_size = 36, color = TEXT_COLOR)
                     text.next_to(self.THM_group[-1], DOWN)
                     text.align_to(self.THM_group[0], LEFT)
                     self.THM_group.add(text)
@@ -294,7 +297,7 @@ class LaTex(Scene):
                     # tex_environment = None        to have not centered text (default was 'centered')
                     # use \parbox to control the width of text. 
                     # WARNING: here FRAME_TEXT_WIDTH is used in cm, not with units of the manim frame
-                    text = Tex(line,tex_environment = "flushleft", tex_template=my_template,  font_size = 30, color = TEXT_COLOR)
+                    text = Tex(line,tex_environment = "flushleft", tex_template=my_template,  font_size = 36, color = TEXT_COLOR)
                     text.set_stroke( color=TEXT_COLOR, width=0.05 )
                     text.next_to(self.GetLastPosition(), DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
                     self.play(Write(text))
@@ -415,7 +418,7 @@ class LaTex(Scene):
         if self.text_mobjects:
             return self.text_mobjects[-1]
         else:
-            return self.FRAME_TEXT_ORIGIN
+            return Dot(self.FRAME_TEXT_ORIGIN)
 
     def Scroll(self,length):
         """

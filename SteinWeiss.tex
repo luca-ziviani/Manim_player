@@ -1,4 +1,4 @@
-\documentclass[a4paper,11pt]{amsart}
+\documentclass[a4paper]{article}
 
 %   PACKAGES
 
@@ -26,6 +26,9 @@
 \usepackage[square,sort,comma,numbers]{natbib}
 \usepackage{url}
 
+\setlength{\textwidth}{12cm}
+\setlength{\linewidth}{12cm}
+\setlength{\hsize}{12cm}
 
 \newcommand{\set}[1]{\left\{#1\right\}}
 \newcommand{\M}{\mathcal{M}}
@@ -125,7 +128,7 @@ The functional
 \[
 f\mapsto \Phi_{\theta,q} (K_p(t,f)) = \left(\int_0^{\infty} (t^{-\theta} K_p(t,f) )^q  \tfrac{dt}{t}\right)^{\tfrac{1}{q}}
 \]
-satisfies all the properties of a norm.To understand what this norm is, notice that
+satisfies all the properties of a norm. To understand what this norm is, notice that
 \begin{align*}
 K_p(t,f) &= \inf_{f=f_0+f_1}\left( \int_U\abs{f_0(x)}^p w_0(x)d\mu(x) + t^p\int_U\abs{f_1(x)}^pw_1(x)d\mu(x)\right)^{\tfrac{1}{p}}\\
 &= \left( \int_U\inf_{f=f_0+f_1}\left(\abs{f_0(x)}^p w_0(x) + t^p\abs{f_1(x)}^pw_1(x)\right)d\mu(x)\right)^{\tfrac{1}{p}}\\
