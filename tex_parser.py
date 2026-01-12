@@ -134,6 +134,7 @@ class TexParser:
                         break
                     self.line_number = line_num
                     self._parse_line(line)
+                    #print(f"Parsed line {self.line_number} | Stack = {self.state_stack}, now {self.state}")
             
             return self.elements
         
@@ -219,12 +220,20 @@ class TexParser:
         """Parse line inside equation environment"""
         if self.patterns['end_equation'].search(line):
             # Create equation element
-            self.elements.append(EquationElement(
-                element_type=ElementType.EQUATION,
-                line_number=self.line_number,
-                content=''.join(self.current_content),
-                environment='equation'
-            ))
+            if self.state_stack[-1] in [ParserState.IN_THEOREM, ParserState.IN_LEMMA, ParserState.IN_PROPOSITION, ParserState.IN_PROOF]:
+                self.current_theorem_content.append(EquationElement(
+                    element_type=ElementType.EQUATION,
+                    line_number=self.line_number,
+                    content=''.join(self.current_content),
+                    environment='equation'
+                ))
+            else:
+                self.elements.append(EquationElement(
+                    element_type=ElementType.EQUATION,
+                    line_number=self.line_number,
+                    content=''.join(self.current_content),
+                    environment='equation'
+                ))
             self._exit_state()
         else:
             self.current_content.append(line)
@@ -232,13 +241,21 @@ class TexParser:
     def _parse_align_line(self, line: str):
         """Parse line inside align environment"""
         if self.patterns['end_align'].search(line):
-            # Create align element
-            self.elements.append(AlignElement(
-                element_type=ElementType.ALIGN,
-                line_number=self.line_number,
-                rows=self.current_align_rows.copy(),
-                full_content=''.join(self.current_content)
-            ))
+            # Create align element dividere case di nested env
+            if self.state_stack[-1] in [ParserState.IN_THEOREM, ParserState.IN_LEMMA, ParserState.IN_PROPOSITION, ParserState.IN_PROOF]:
+                self.current_theorem_content.append(AlignElement(
+                    element_type=ElementType.ALIGN,
+                    line_number=self.line_number,
+                    rows=self.current_align_rows.copy(),
+                    full_content=''.join(self.current_content)
+                ))
+            else:
+                self.elements.append(AlignElement(
+                    element_type=ElementType.ALIGN,
+                    line_number=self.line_number,
+                    rows=self.current_align_rows.copy(),
+                    full_content=''.join(self.current_content)
+                ))
             self._exit_state()
         else:
             self.current_content.append(line)
@@ -286,17 +303,17 @@ class TexParser:
         # Otherwise, recursively parse the content
         # Save current state
         saved_state = self.state
-        self.state = ParserState.NORMAL
+        
+        #self.state = ParserState.NORMAL
         
         # Parse the line
-        self._parse_line(line)
+        self._parse_normal_line(line)
         
-        # If a new element was added, move it to theorem content
+        # If a new TextElement was added, move it to theorem content
         if self.elements and self.elements[-1].line_number == self.line_number:
             self.current_theorem_content.append(self.elements.pop())
-        
-        # Restore state
-        self.state = saved_state
+            # Restore state
+            self.state = saved_state
     
     def _enter_state(self, new_state: ParserState):
         """Enter a new parsing state"""
@@ -308,8 +325,7 @@ class TexParser:
             self.current_theorem_content = []
         elif new_state == ParserState.IN_ALIGN:
             self.current_align_rows = []
-        #else:
-        #    self.current_content = []
+
     
     def _exit_state(self):
         """Exit current state and return to previous"""
@@ -328,14 +344,15 @@ if __name__ == "__main__":
     elements = parser.parse()
     
     # Print parsed structure
-    for elem in elements:
-        print(f"{elem.element_type.value}: Line {elem.line_number}")
-        if isinstance(elem, TextElement):
-            print(f"  Content: {elem.content[:50]}...")
-        elif isinstance(elem, ProofElement):
+    #for elem in elements:
+        #print(elem)
+        #print(f"{elem.element_type.value}: Line {elem.line_number}")
+        #if isinstance(elem, TextElement):
+            #print(f"  Content: {elem.content[:50]}...")
+        #elif isinstance(elem, ProofElement):
             #print(f"  Label: {elem.label}")
-            print(f"  Contains {len(elem.content)} sub-elements")
-            i=1
-            for el in elem.content:
-                print(f"  Element {i}: {el.content}")
-                i+=1
+            #print(f"  Contains {len(elem.content)} sub-elements")
+            #i=1
+            #for el in elem.content:
+                #print(f"  Element {i} | Type: {el.element_type} | content {el.content[:50]}")
+            #    i+=1
