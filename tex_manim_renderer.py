@@ -23,7 +23,7 @@ class TexToManimScene(Scene):
         # Configuration
         self.TEXT_COLOR = WHITE
         self.FRAME_TEXT_WIDTH = 17
-        self.FRAME_TEXT_HEIGHT = 9
+        self.FRAME_TEXT_HEIGHT = 7
         self.FRAME_TEXT_ORIGIN = None  # Set in construct()
         
         # State tracking
@@ -88,12 +88,13 @@ class TexToManimScene(Scene):
             color=self.TEXT_COLOR
         )
         text.set_stroke(color=self.TEXT_COLOR, width=0.05)
+
+        self.check_and_scroll()
         
         text.next_to(self.get_last_position(), DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
-        
         self.play(Write(text))
         self.text_mobjects.add(text)
-        self.check_and_scroll(text)
+
         self.current_time = self.update_time(1)
     
     def render_equation(self, element: EquationElement):
@@ -107,13 +108,14 @@ class TexToManimScene(Scene):
         )
         eq.set_stroke(color=self.TEXT_COLOR, width=0.05)
         
+        self.check_and_scroll()
+
         # Center the equation
         eq.next_to(self.get_last_position(), DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
         eq.shift(RIGHT * (self.FRAME_TEXT_WIDTH - eq.width) / 2)
-        
         self.play(Write(eq))
         self.text_mobjects.add(eq)
-        self.check_and_scroll(eq)
+
         self.current_time = self.update_time(1)
     
     def render_align(self, element: AlignElement):
@@ -132,23 +134,28 @@ class TexToManimScene(Scene):
             color=self.TEXT_COLOR,
             substrings_to_isolate=substrings_to_isolate
         )
-        
+
+        self.check_and_scroll()
         eq.next_to(self.get_last_position(), DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
         eq.shift(RIGHT * (self.FRAME_TEXT_WIDTH - eq.width) / 2)
         
+        
+
         # Animate each isolated substring sequentially
         for substring in substrings_to_isolate:
             try:
                 eq_part = eq.get_part_by_tex(substring)
-                self.play(Write(eq_part))
-                self.text_mobjects.add(eq_part)
+                
 
-                # Check if we need to scroll
-                if self.get_last_position().get_bottom()[1] - eq_part.height < -self.FRAME_TEXT_HEIGHT/2:
+                # Check if we need to scroll and move all the following parts
+                if eq_part.get_bottom()[1] < -self.FRAME_TEXT_HEIGHT/2.:
                     # Don't write align too long
                     self.scroll(0.5 * self.FRAME_TEXT_HEIGHT)
                     index_part = eq.submobjects.index(eq_part)
-                    eq[index_part+1:].shift(0.5 * self.FRAME_TEXT_HEIGHT * UP)
+                    eq[index_part:].shift(0.5 * self.FRAME_TEXT_HEIGHT * UP)
+
+                self.play(Write(eq_part))
+                self.text_mobjects.add(eq_part)
             except ValueError:
                 # Substring not found, skip
                 print(f"Warning: Could not find substring in align: {substring[:30]}...")
@@ -169,6 +176,7 @@ class TexToManimScene(Scene):
                 font_size=40,
                 color=color
             )
+            print(header)
         else:
             header = Tex(
                 rf"\textbf{{{name}}}",
@@ -296,9 +304,9 @@ class TexToManimScene(Scene):
         else:
             return Dot(self.FRAME_TEXT_ORIGIN)
     
-    def check_and_scroll(self, mobject):
+    def check_and_scroll(self):
         """Check if we need to scroll when adding a mobject"""
-        if self.text_mobjects and self.text_mobjects[-1].get_center()[1] < -3.0:
+        if self.text_mobjects and self.text_mobjects[-1].get_center()[1] < -self.FRAME_TEXT_HEIGHT/2.1:
             self.scroll(0.5 * self.FRAME_TEXT_HEIGHT)
     
     def scroll(self, length):

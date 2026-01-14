@@ -134,7 +134,7 @@ class TexParser:
                         break
                     self.line_number = line_num
                     self._parse_line(line)
-                    #print(f"Parsed line {self.line_number} | Stack = {self.state_stack}, now {self.state}")
+                    print(f"Line {self.line_number} | Stack = {self.state_stack}, now {self.state}")
             
             return self.elements
         
@@ -182,6 +182,7 @@ class TexParser:
         if match := self.patterns['begin_thm'].search(line):
             self._enter_state(ParserState.IN_THEOREM)
             self.current_label = match.group(1) if match.group(1) else None
+            print(f"\n current_label = {self.current_label}")
             return
         
         if match := self.patterns['begin_lem'].search(line):
@@ -289,6 +290,7 @@ class TexParser:
                     ParserState.IN_PROPOSITION: ElementType.PROPOSITION,
                 }
                 
+                #print(f"Defining TheoremElement : label = {self.current_label}")
                 self.elements.append(TheoremLikeElement(
                     element_type=theorem_type_map[self.state],
                     line_number=self.line_number,
@@ -335,7 +337,7 @@ class TexParser:
             self.state = ParserState.NORMAL
         
         self.current_content = []
-        self.current_label = None
+        
 
 
 # Example usage
