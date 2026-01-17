@@ -48,9 +48,12 @@ class EquationElement(TexElement):
 class AlignElement(TexElement):
     rows: List[List[str]]  # Each row is a list of column entries
     full_content: str
+    align_animations: List[str] = None 
     
     def __post_init__(self):
         self.element_type = ElementType.ALIGN
+        if self.align_animations is None:
+            self.align_animations = []
 
 
 @dataclass
@@ -104,6 +107,7 @@ class TexParser:
         self.current_content: List[str] = []
         self.current_theorem_content: List[TexElement] = []
         self.current_align_rows: List[List[str]] = []
+        self.current_align_animations: List[str] = []
         self.current_label: Optional[str] = None
         
         # Regex patterns (compiled once for efficiency)
@@ -122,6 +126,7 @@ class TexParser:
             'end_prop': re.compile(r'\\end\{prop\}'),
             'end_proof': re.compile(r'\\end\{proof\}'),
             'end_document': re.compile(r'\\end\{document\}'),
+            'manim_directive': re.compile(r'%\s*Manim:\s*(\w+)'),
         }
     
     def parse(self) -> List[TexElement]:
@@ -134,7 +139,7 @@ class TexParser:
                         break
                     self.line_number = line_num
                     self._parse_line(line)
-                    print(f"Line {self.line_number} | Stack = {self.state_stack}, now {self.state}")
+                    print(f"Line {self.line_number:4} |" +"---"*len(self.state_stack) + f" now {self.state.value}")
             
             return self.elements
         
@@ -152,8 +157,6 @@ class TexParser:
         
         if line.startswith("%"):
             return
-        
-        
         
         # Handle different states
         if self.state == ParserState.NORMAL:
@@ -182,7 +185,6 @@ class TexParser:
         if match := self.patterns['begin_thm'].search(line):
             self._enter_state(ParserState.IN_THEOREM)
             self.current_label = match.group(1) if match.group(1) else None
-            print(f"\n current_label = {self.current_label}")
             return
         
         if match := self.patterns['begin_lem'].search(line):
@@ -242,28 +244,37 @@ class TexParser:
     def _parse_align_line(self, line: str):
         """Parse line inside align environment"""
         if self.patterns['end_align'].search(line):
+            print(f"ALIGN ROWS : {self.current_align_rows}")
             # Create align element dividere case di nested env
             if self.state_stack[-1] in [ParserState.IN_THEOREM, ParserState.IN_LEMMA, ParserState.IN_PROPOSITION, ParserState.IN_PROOF]:
                 self.current_theorem_content.append(AlignElement(
                     element_type=ElementType.ALIGN,
                     line_number=self.line_number,
                     rows=self.current_align_rows.copy(),
-                    full_content=''.join(self.current_content)
+                    full_content=''.join(self.current_content),
+                    align_animations = self.current_align_animations.copy()
                 ))
             else:
                 self.elements.append(AlignElement(
                     element_type=ElementType.ALIGN,
                     line_number=self.line_number,
                     rows=self.current_align_rows.copy(),
-                    full_content=''.join(self.current_content)
+                    full_content=''.join(self.current_content),
+                    align_animations = self.current_align_animations.copy()
                 ))
+            self.current_align_animations = []
             self._exit_state()
         else:
-            self.current_content.append(line)
+            self.current_content.append(line.replace("\\pause",""))
             # Split by & to get columns
-            columns = [col.strip() for col in line.split('&')]
+            # WARNING: always write \pause& instead of &\pause !
+            columns = [col for col in line.split('\\pause')]
             self.current_align_rows.append(columns)
-    
+            if manim_dir:= self.patterns['manim_directive'].search(line):
+                self.current_align_animations.append(manim_dir.group(1).strip() if manim_dir.group(1) else "Write")
+            else: 
+                self.current_align_animations.append("Write")
+
     def _parse_theorem_like_line(self, line: str):
         """Parse line inside theorem/lemma/proposition/proof"""
         
@@ -328,7 +339,6 @@ class TexParser:
         elif new_state == ParserState.IN_ALIGN:
             self.current_align_rows = []
 
-    
     def _exit_state(self):
         """Exit current state and return to previous"""
         if self.state_stack:

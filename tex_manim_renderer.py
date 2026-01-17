@@ -9,7 +9,7 @@ from tex_parser import (
     AlignElement, TheoremLikeElement, ProofElement, SectionElement
 )
 import pickle
-
+import re
 
 class TexToManimScene(Scene):
     """Renders parsed LaTeX elements as animations"""
@@ -123,17 +123,30 @@ class TexToManimScene(Scene):
         # Create the full align as a single MathTex
         # Extract each column as a substring to isolate
         substrings_to_isolate = []
+        substrings_to_isolate2 = []
         for row in element.rows:
+            # TODO split col according to {{}}, keep the count of subsubstring in such col
+            for col in row:
+                if col.strip():
+                     substrings_to_isolate2.extend(re.split("{{(.*?)}}", col) )
             substrings_to_isolate.extend([col for col in row if col.strip()])
+        print(f"substrings_to_isolate2 = {substrings_to_isolate2}")
         
+        # PROBLEM: MathTex is naturally splitting the strings further, so a line can be split more than
+        # what is wanted because there is a pattern in another line. This cause the fail of
+        # get_part_by_tex and eq_parts become None. Error is given. Need to solve this issure, consider
+        # defining a variant XMathTex avoiding to split further...(?)
+        # Otherwise, manually insert spaces or empty characters to make the strings distinguishable
         eq = MathTex(
             element.full_content,
             tex_environment="align*",
             tex_template=self.tex_template,
             font_size=36,
             color=self.TEXT_COLOR,
-            substrings_to_isolate=substrings_to_isolate
+            substrings_to_isolate=substrings_to_isolate2
         )
+
+        print(f"tex_strings = {eq.tex_strings}")
 
         self.check_and_scroll()
         eq.next_to(self.get_last_position(), DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
@@ -142,11 +155,13 @@ class TexToManimScene(Scene):
         
 
         # Animate each isolated substring sequentially
-        for substring in substrings_to_isolate:
+        for substring in substrings_to_isolate2:
             try:
+                # TODO: access parts using indices
+                print(f"Processing string : {substring}")
+
                 eq_part = eq.get_part_by_tex(substring)
                 
-
                 # Check if we need to scroll and move all the following parts
                 if eq_part.get_bottom()[1] < -self.FRAME_TEXT_HEIGHT/2.:
                     # Don't write align too long
@@ -154,6 +169,7 @@ class TexToManimScene(Scene):
                     index_part = eq.submobjects.index(eq_part)
                     eq[index_part:].shift(0.5 * self.FRAME_TEXT_HEIGHT * UP)
 
+                # TODO: apply the correct function of rendering according to align_animations
                 self.play(Write(eq_part))
                 self.text_mobjects.add(eq_part)
             except ValueError:

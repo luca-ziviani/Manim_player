@@ -1,1 +1,10 @@
 *.mp4
+*.aux
+*.dvi
+*.log
+*.pdf
+*.pkl
+*.out
+*.gz
+media/
+__pycache__/
