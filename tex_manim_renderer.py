@@ -80,20 +80,32 @@ class TexToManimScene(Scene):
     
     def render_text(self, element: TextElement):
         """Render plain text"""
-        text = Tex(
+        text = MathTex(
             element.content,
             tex_environment="flushleft",
             tex_template=self.tex_template,
             font_size=36,
-            color=self.TEXT_COLOR
+            color=self.TEXT_COLOR,
+            substrings_to_isolate= element.content.split("\\pause")
         )
-        text.set_stroke(color=self.TEXT_COLOR, width=0.05)
+        #text.set_stroke(color=self.TEXT_COLOR, width=0.05)
 
         self.check_and_scroll()
-        
         text.next_to(self.get_last_position(), DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
-        self.play(Write(text))
-        self.text_mobjects.add(text)
+        
+        for substring in element.content.split(r"\pause"):
+            text_part = text.get_part_by_tex(substring)
+            if text_part.get_bottom()[1] < -self.FRAME_TEXT_HEIGHT/2.3:
+                self.scroll(0.5 * self.FRAME_TEXT_HEIGHT)
+                index_part = text.submobjects.index(text_part)
+                text[index_part-1:].shift(0.5 * self.FRAME_TEXT_HEIGHT * UP)
+                # the choice for the beginning of the index is not stable, compare with align
+                # Probably this is due to the extra term on the left for align, that here is not there.
+
+            self.play(Write(text_part),run_time = len(substring)/20)
+            self.play(Wait(0.8))
+            self.text_mobjects.add(text_part)
+            
 
         self.current_time = self.update_time(1)
     
@@ -114,6 +126,7 @@ class TexToManimScene(Scene):
         eq.next_to(self.get_last_position(), DOWN).align_to(self.FRAME_TEXT_ORIGIN, LEFT)
         eq.shift(RIGHT * (self.FRAME_TEXT_WIDTH - eq.width) / 2)
         self.play(Write(eq))
+        self.play(Wait(1))
         self.text_mobjects.add(eq)
 
         self.current_time = self.update_time(1)
@@ -130,7 +143,7 @@ class TexToManimScene(Scene):
                 if col.strip():
                      substrings_to_isolate2.extend(re.split("{{(.*?)}}", col) )
             substrings_to_isolate.extend([col for col in row if col.strip()])
-        print(f"substrings_to_isolate2 = {substrings_to_isolate2}")
+        #print(f"substrings_to_isolate2 = {substrings_to_isolate2}")
         
         # PROBLEM: MathTex is naturally splitting the strings further, so a line can be split more than
         # what is wanted because there is a pattern in another line. This cause the fail of
@@ -172,6 +185,7 @@ class TexToManimScene(Scene):
                 # TODO: apply the correct function of rendering according to align_animations
                 self.play(Write(eq_part))
                 self.text_mobjects.add(eq_part)
+                self.play(Wait(1.2))
             except ValueError:
                 # Substring not found, skip
                 print(f"Warning: Could not find substring in align: {substring[:30]}...")
@@ -212,11 +226,19 @@ class TexToManimScene(Scene):
                     tex_environment="flushleft",
                     tex_template=self.tex_template,
                     font_size=36,
-                    color=self.TEXT_COLOR
+                    color=self.TEXT_COLOR,
+                    substrings_to_isolate= sub_element.content.split("\\pause")
                 )
                 text.next_to(thm_group[-1], DOWN).align_to(thm_group[0], LEFT)
                 thm_group.add(text)
-                thm_animations.append(Write(text))
+
+                for substring in sub_element.content.split(r"\pause"):
+                    text_part = text.get_part_by_tex(substring)
+                    #self.play(Write(text_part))
+                    thm_animations.append(Write(text_part))
+                    #self.play(Wait(0.8))
+                    thm_animations.append(Wait(0.8))
+                
             
             elif isinstance(sub_element, EquationElement):
                 eq = MathTex(
@@ -231,6 +253,7 @@ class TexToManimScene(Scene):
                 eq.shift(RIGHT * (self.FRAME_TEXT_WIDTH - eq.width) / 2)
                 thm_group.add(eq)
                 thm_animations.append(Write(eq))
+                thm_animations.append(Wait(0.8))
             
             elif isinstance(sub_element, AlignElement):
                 # For align inside theorem, render simpler
@@ -245,6 +268,7 @@ class TexToManimScene(Scene):
                 eq.shift(RIGHT * (self.FRAME_TEXT_WIDTH - eq.width) / 2)
                 thm_group.add(eq)
                 thm_animations.append(Write(eq))
+                thm_animations.append(Wait(0.8))
         
         # Center the whole theorem on screen
         thm_group.move_to(ORIGIN)
@@ -256,6 +280,7 @@ class TexToManimScene(Scene):
         # Clear screen and play
         if self.text_mobjects:
             self.play(FadeOut(*self.text_mobjects))
+            self.text_mobjects.set_submobjects([])
         
         for anim in thm_animations:
             self.play(anim)
@@ -299,6 +324,7 @@ class TexToManimScene(Scene):
         """Render section header"""
         if self.text_mobjects:
             self.play(FadeOut(*self.text_mobjects))
+            self.text_mobjects.set_submobjects([])
         
         section_title = Tex(
             element.title,
@@ -322,7 +348,7 @@ class TexToManimScene(Scene):
     
     def check_and_scroll(self):
         """Check if we need to scroll when adding a mobject"""
-        if self.text_mobjects and self.text_mobjects[-1].get_center()[1] < -self.FRAME_TEXT_HEIGHT/2.1:
+        if self.text_mobjects and self.text_mobjects[-1].get_bottom()[1] < -self.FRAME_TEXT_HEIGHT/2.8:
             self.scroll(0.5 * self.FRAME_TEXT_HEIGHT)
     
     def scroll(self, length):
@@ -345,6 +371,7 @@ class TexToManimScene(Scene):
         """Render end of document"""
         if self.text_mobjects:
             self.play(FadeOut(*self.text_mobjects))
+            self.text_mobjects.set_submobjects([])
         
         thanks = Tex(
             r"Thanks for watching!",

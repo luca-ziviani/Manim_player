@@ -8,3 +8,6 @@
 *.gz
 media/
 __pycache__/
+DMS.tex
+main.tex
+tex_to_manim.py

@@ -102,81 +102,126 @@
 \newtheorem{ex}[thm]{Example}
 
 
+
 \begin{document}
 
 \section{Stein-Weiss interpolation theorem}
 
-%\begin{proof}
-Consider the functional 
+Preliminaries:
+
+$\bullet$ Let $w\colon \Rd\to\R$ a positive function. \pause For every function $f\colon \Rd\to \R$ we denote the \textbf{weighted $L^p$-norm of $f$} 
+\[
+\norm{f}_{L^p(w)} = \left(\int_\Rd \abs{f(x)}^p w(x)dx \right)^{\frac1p}.
+\]
+$\bullet$ We consider the space
+\[
+L^p(w) = \left\{ f\colon \Rd\to \R \Big\vert \norm{f}_{L^p(w)} <\infty \right\}.
+\]
+composed by all the functions with bounded norm. 
+
+$\bullet$ We say that $T\colon L^p(w )\to L^p(w)$ is \textbf{linear} if for any $f,g\in L^p(w )$ and any $\alpha,\beta\in\R$ we have
+\[
+T(\alpha f+ \beta g) = \alpha Tf + \beta Tg.
+\]
+Moreover, $T$ is \textbf{bounded} if there exists a constant $M>0$ such that
+\[
+\norm{Tf}_{L^p(w)} \leq M \norm{f}_{L^p( w)}
+\]
+for any function $f\in L^p( w)$.
+
+Question:\pause If a linear operator $T$ is bounded on two spaces
+\begin{align*}
+T& \colon L^p( w_0)\to L^p(w_0) &  T& \colon L^p( w_1 )\to L^p(w_1)
+\end{align*}
+for some different weights $w_0$ and $w_1$,\pause is it bounded even for some "intermediate" weight $w$ between $w_0$ and $w_1$ ?
+
+\begin{thm}[Stein-Weiss]
+Assume that $1\leq p< \infty$ and that $0<\theta<1$. \pause Let $w_0$, $w_1$ be positive weight functions and suppose that $T$ is a bounded linear operator such that
+\begin{align*}
+T\pause& \colon L^p( w_0)\to L^p(w_0) \pause&  T\pause& \colon L^p( w_1 )\to L^p(w_1)
+\end{align*}
+with norms $M_0$ and $M_1$ respectively. \pause Then 
+\begin{align*}
+T\colon L^p(w )\to L^p(w)
+\end{align*}
+with norm $M\leq M_0^{1-\theta} M_1^\theta$ and 
+\begin{align*}
+w & = w_0^{1-\theta}w_1^{\theta} .
+\end{align*}
+\end{thm}
+
+\begin{proof}
+Here below we reproduce a general interpolation method, called \textbf{K interpolation method}.\pause For this particular theorem, it reduces to a very nice proof with lovely computations on integrals.
+
+Let $f$ be a function, suppose that you can decompose it as a sum of two other functions $f_0,f_1$, \pause that is
+\[
+f= f_0+f_1.
+\]
+Then, for any $t\geq0$ fixed, the quantity
+\[
+ \norm{f_0}^p_{L^p(w_0)} + t^p\norm{f_1}^p_{L^p(w_1)}\geq 0
+\]
+is always positive (or infinity).\pause Notice that we took the $L^p$ norm of $f_0$ with weight $w_0$\pause and the $L^p$ norm of $f_1$ with weight $w_1$.\pause Of course, this quantity depends on $f$ but it also depend on the particular decomposition $f=f_0+f_1$ we chose.\pause Notice that, if $f\neq 0$, then we always obtain a positive number.\pause  We may ask what is the smallest value we can get over all possible decompositions of $f$. \pause For this purpose, we define the functional 
 \[
 K_p(t,f) = \inf_{f=f_0+f_1}( \norm{f_0}^p_{L^p(w_0)} + t^p\norm{f_1}^p_{L^p(w_1)})^{\tfrac{1}{p}}.
 \]
-The functional 
+Notice that $K_p(t,f)$ is a positive number (or infinity) for any fixed $t\geq0$ and function $f$.\pause How can we use it? \pause The winning idea is to look at the following integral
 \[
-f\mapsto \Phi_{\theta,q} (K_p(t,f)) = \left(\int_0^{\infty} (t^{-\theta} K_p(t,f) )^q  \tfrac{dt}{t}\right)^{\tfrac{1}{q}}
+\Phi(f) := \left(\int_0^{\infty} (t^{-\theta} K_p(t,f) )^p  \tfrac{dt}{t}\right)^{\tfrac{1}{q}},
 \]
-satisfies all the properties of a norm. To understand what this norm is, notice that
+where $0<\theta<1$. \pause We are integrating with respect to $t$, so at the end we obtain a number which only depends on $f$.\pause We claim that this defines a norm.\pause To understand why, notice that
 \begin{align*}
-K_p(t,f) \pause&= {{\inf_{f=f_0+f_1} }} \left( \int_U\abs{f_0(x)}^p w_0(x)d\mu(x) + t^p\int_U\abs{f_1(x)}^pw_1(x)d\mu(x)\right)^{\tfrac{1}{p}}\\
-\pause& = \left( \int_U\inf_{f=f_0+f_1}\left(\abs{f_0(x)}^p w_0(x) + t^p\abs{f_1(x)}^pw_1(x)\right)d\mu(x)\right)^{\tfrac{1}{p}}\\
-\pause& = \left( \int_U|f(x)|^p\inf_{y_0+y_1=1}\left(\abs{y_0}^p w_0(x) + t^p\abs{y_1}^pw_1(x)\right)d\mu(x)\right)^{\tfrac{1}{p}}\\
-\pause& = \left( \int_U|f(x)|^p w_0(x)\inf_{y_0+y_1=1}\left(\abs{y_0}^p  + t^p\tfrac{w_1(x)}{w_0(x)}\abs{y_1}^p\right)d\mu(x)\right)^{\tfrac{1}{p}}\\ %Manim:TransformMatchingTex
-\pause& = \left( \int_U|f(x)|^p w_0(x) F\left(t^p\tfrac{w_1(x)}{w_0(x)}\right) d\mu(x)\right)^{\tfrac{1}{p}}\\
+K_p(t,f) \pause&= \inf_{f=f_0+f_1} \left( \int_\Rd\abs{f_0(x)}^p w_0(x)dx + t^p\int_\Rd\abs{f_1(x)}^pw_1(x)dx\right)^{\tfrac{1}{p}}\\
+\pause& = \left( \int_\Rd\inf_{f=f_0+f_1}\left(\abs{f_0(x)}^p w_0(x) + t^p\abs{f_1(x)}^pw_1(x)\right)dx\right)^{\tfrac{1}{p}}\\
+\pause& = \left( \int_\Rd|f(x)|^p\inf_{y_0+y_1=1}\left(\abs{y_0}^p w_0(x) + t^p\abs{y_1}^pw_1(x)\right)dx\right)^{\tfrac{1}{p}}\\
+\pause& = \left( \int_\Rd|f(x)|^p w_0(x)\inf_{y_0+y_1=1}\left(\abs{y_0}^p  + t^p\tfrac{w_1(x)}{w_0(x)}\abs{y_1}^p\right)dx\right)^{\tfrac{1}{p}}
 \end{align*}
-where
+For clarity, we define
 \[
-F(s) =\inf_{y_0+y_1=1}\left(\abs{y_0}^p  + s\abs{y_1}^p\right)
+F(s) =\inf_{y_0+y_1=1}\left(\abs{y_0}^p  + s\abs{y_1}^p\right),
 \]
-
-\end{document}
-
-By the Fubini theorem we have
+so we can rewrite
+\[
+K_p(t,f) = \left( \int_\Rd|f(x)|^p w_0(x) F\left(t^p\tfrac{w_1(x)}{w_0(x)}\right) dx\right)^{\tfrac{1}{p}}\\
+\]
+Now we can substitute in the definition of $\Phi$ and we obtain
 \begin{align*}
-\Phi_{\theta,p}(K_p(t,f)) \pause& = \left( \int_0^\infty t^{-\theta p} (K_p(t,f))^p \tfrac{dt}{t} \right)^{\tfrac{1}{p}} \\
-\pause& = \left( \int_0^\infty t^{-\theta p} \left( \int_U|f(x)|^p w_0(x) F\left(t^p\tfrac{w_1(x)}{w_0(x)}\right) d\mu(x)\right) \tfrac{dt}{t} \right)^{\tfrac{1}{p}} \\
-\pause& = \left( \int_U|f(x)|^p w_0(x) \left(\int_0^\infty t^{-\theta p}F\left(t^p\tfrac{w_1(x)}{w_0(x)}\right)\tfrac{dt}{t} \right) d\mu(x)  \right)^{\tfrac{1}{p}} \\
-\pause& = \left( \int_U|f(x)|^p w_0^{1-\theta}(x)w_1^{\theta}(x) \left(\int_0^\infty t^{-\theta p}F\left(s^p\right)\tfrac{dt}{t} \right) d\mu(x)  \right)^{\tfrac{1}{p}} \\
-\pause& = C \left( \int_U|f(x)|^p w_0^{1-\theta}(x)w_1^{\theta}(x)  d\mu(x)  \right)^{\tfrac{1}{p}}\\
+\Phi(f) \pause& = \left( \int_0^\infty t^{-\theta p} (K_p(t,f))^p \tfrac{dt}{t} \right)^{\tfrac{1}{p}} \\
+\pause& = \left( \int_0^\infty t^{-\theta p} \left( \int_\Rd|f(x)|^p w_0(x) F\left(t^p\tfrac{w_1(x)}{w_0(x)}\right) dx\right) \tfrac{dt}{t} \right)^{\tfrac{1}{p}} \\
+\pause& = \left( \int_\Rd|f(x)|^p w_0(x) \left(\int_0^\infty t^{-\theta p}F\left(t^p\tfrac{w_1(x)}{w_0(x)}\right)\tfrac{dt}{t} \right) dx  \right)^{\tfrac{1}{p}}.
+\end{align*}
+The change of variable $s=t\left(\frac{w_1(x)}{w_0(x)}\right)^{\frac{1}{p}}$ gives
+\begin{align*}
+\Phi(f)\pause& = \left( \int_\Rd|f(x)|^p w_0^{1-\theta}(x)w_1^{\theta}(x) \left(\int_0^\infty s^{-\theta p}F\left(s^p\right)\tfrac{ds}{s} \right) dx  \right)^{\tfrac{1}{p}} \\
+\pause& = C \left( \int_\Rd|f(x)|^p w_0^{1-\theta}(x)w_1^{\theta}(x)  dx  \right)^{\tfrac{1}{p}}\\
 \pause&  = C\norm{f}_{L^p(w)}
 \end{align*}
 where
 \[
-C = \int_0^\infty t^{-\theta p}F\left(s^p\right)\tfrac{dt}{t} <\infty
+C = \int_0^\infty s^{-\theta p}F\left(s^p\right)\tfrac{ds}{s} <\infty
 \]
-We have
+This proves that $\Phi$ is actually the norm with weight $w$ !\pause We built the bridge between the norm with the new weight $w$ by just using the norms with the two original weight $w_0, w_1$. \pause Now we can conclude the proof of the theorem. \pause We have
 \begin{align*}
 K_p(t, Tf) \pause& = \inf_{f=f_0+f_1}( \norm{Tf_0}^p_{L^p(w_0)} + t^p\norm{Tf_1}^p_{L^p(w_1)})^{\tfrac{1}{p}}\\ 
 	\pause& \leq \inf_{f=f_0+f_1}(M_0^p \norm{f_0}^p_{L^p(w_0)} + t^p \,M_1^p\norm{f_1}^p_{L^p(w_1)})^{\tfrac{1}{p}}\\
 	\pause& \leq M_0 \inf_{f=f_0+f_1}( \norm{f_0}^p_{L^p(w_0)} + t^p \,\tfrac{M_1^p}{M_0^p}\norm{f_1}^p_{L^p(w_1)})^{\tfrac{1}{p}} \\
 	\pause&  \leq M_0 K_p\left( \tfrac{M_1}{M_0}t,\, f \right).
 \end{align*}
-By applying $\Phi_{\theta,q}$ we obtain
+By applying $\Phi$ and changing variables as before, we obtain
 \begin{align*}
-\norm{Tf}_{L^p(w)} \pause& = \Phi_{\theta,q} (K_p(t,Tf)) \\
-	\pause& \leq M_0 \Phi_{\theta,q} \left(K_p\left(\tfrac{M_1}{M_0}t, \,f\right)\right) \\
-\pause& \leq M_0^{1-\theta}M_1^\theta \Phi_{\theta,q} \left(K_p\left(t, \,f\right)\right) \\
+\norm{Tf}_{L^p(w)} \pause& = \Phi (Tf) \\
+\pause & \leq M_0\left( \int_0^\infty t^{-\theta p} K_p\left( \tfrac{M_1}{M_0}t,\, f \right)^p \tfrac{dt}{t} \right)^{\tfrac{1}{p}} \\
+%	\pause& \leq M_0 \Phi_{\theta,q} \left(K_p\left(\tfrac{M_1}{M_0}t, \,f\right)\right) \\
+\pause& \leq M_0^{1-\theta}M_1^\theta  \left( \int_0^\infty t^{-\theta p} (K_p(t,f))^p \tfrac{dt}{t} \right)^{\tfrac{1}{p}}  \\
+\pause& \leq M_0^{1-\theta}M_1^\theta\Phi(f)\\
 \pause& \leq M_0^{1-\theta}M_1^\theta \norm{f}_{L^p(w)}.
 \end{align*}
-
+This proves that $T$ is bounded on $L^p(\Rd,w)$ with norm $M=M_0^{1-\theta} M_1^{\theta}$.
 \end{proof}
+
 
 
 \end{document}
 
 
 
-\begin{thm}[Stein-Weiss]
-Assume that $1\leq p\leq \infty$ and that $0<\theta<1$. Let $w_0$, $w_1$, $\Tilde{w}_0$, $\Tilde{w}_1$ be positive weight functions and consider 
-\begin{align*}
-w \pause& = w_0^{1-\theta}w_1^{\theta} \pause&  \Tilde{w} \pause& = \Tilde{w}_0^{1-\theta}\Tilde{w}_1^{\theta}.
-\end{align*}
-If $T$ is a bounded linear operator such that
-\begin{align*}
-T\pause& \colon L^p(U, w_0d\mu )\to L^p(V, \Tilde{w}_0d\nu) \pause&  T\pause& \colon L^p(U, w_1d\mu )\to L^p(V, \Tilde{w}_1d\nu)
-\end{align*}
-with norms $M_0$ and $M_1$ respectively, then
-\begin{align*}
-T\colon L^p(U, wd\mu )\to L^p(V, \Tilde{w}d\nu)
-\end{align*}
-with norm $M\leq M_0^{1-\theta} M_1^\theta$.
-\end{thm}
